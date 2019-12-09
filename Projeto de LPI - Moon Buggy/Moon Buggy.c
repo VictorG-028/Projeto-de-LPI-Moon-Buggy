@@ -238,7 +238,7 @@ void msg_do_level(elementos E, short level_atual)
 } // Fim da função msg_do_level();
 
 
-void logica_pular(elementos E, bool *pular, bool *subir, bool *descer, short *frame_cabine, short *frame_chassi, short *frame_roda)
+void logica_pular(elementos *E, bool *pular, bool *subir, bool *descer, short *frame_cabine, short *frame_chassi, short *frame_roda)
 {
     // Variáveis
     char roda[] = "\\-/|U";
@@ -248,9 +248,9 @@ void logica_pular(elementos E, bool *pular, bool *subir, bool *descer, short *fr
     // Atualiza a altura
     if (*subir)
     {
-        E.buggy.x += -1; // Sobe o buggy
+        E->buggy.x += -1; // Sobe o buggy
 
-        if (E.buggy.x < E.estrada.x -5) // Limita a altura max de subida
+        if (E->buggy.x < E->estrada.x -5) // Limita a altura max de subida
         {
             // Inverte subir e descer
             *subir = false;
@@ -259,9 +259,9 @@ void logica_pular(elementos E, bool *pular, bool *subir, bool *descer, short *fr
     }
     else if (*descer)
     {
-        E.buggy.x += +1; // Desce o buggy
+        E->buggy.x += +1; // Desce o buggy
 
-        if (E.buggy.x > E.estrada.x -3) // Limita a descida até o chão
+        if (E->buggy.x > E->estrada.x -3) // Limita a descida até o chão
         {
             // Finalização da animação do pulo
             *descer = false;
@@ -273,11 +273,11 @@ void logica_pular(elementos E, bool *pular, bool *subir, bool *descer, short *fr
     }
 
     // Desenha o carro pulando
-    gotoxy(E.buggy.x, E.buggy.y);
+    gotoxy(E->buggy.x, E->buggy.y);
     printf("   %c%cn ", cabine[*frame_cabine], chassi[*frame_chassi]);
 
-    gotoxy(E.buggy.x +1, E.buggy.y);
-    if(E.buggy.x == E.estrada.x -2 || E.buggy.x == E.estrada.x -2)
+    gotoxy(E->buggy.x +1, E->buggy.y);
+    if(E->buggy.x == E->estrada.x -2 || E->buggy.x == E->estrada.x -2)
     {
         printf("(U)-(U)");
     }
@@ -286,11 +286,11 @@ void logica_pular(elementos E, bool *pular, bool *subir, bool *descer, short *fr
         printf("(%c)-(%c)", roda[*frame_roda], roda[*frame_roda]);
     }
 
-    gotoxy(E.buggy.x +2, E.buggy.y); // Antiga posição das rodas
-    if (*subir || E.buggy.x != E.estrada.x -2) printf("       "); // Remove as rodas da tela
+    gotoxy(E->buggy.x +2, E->buggy.y); // Antiga posição das rodas
+    if (*subir || E->buggy.x != E->estrada.x -2) printf("       "); // Remove as rodas da tela
 
-    gotoxy(E.buggy.x -1, E.buggy.y); // Antiga posição do chassi
-    if (*descer || E.buggy.x != E.estrada.x -3) printf("       "); // Remove o chassi do buggy da tela
+    gotoxy(E->buggy.x -1, E->buggy.y); // Antiga posição do chassi
+    if (*descer || E->buggy.x != E->estrada.x -3) printf("       "); // Remove o chassi do buggy da tela
 
     // Atualiza o frame do chassi e cabine
     if(*frame_chassi < 3)
@@ -350,7 +350,7 @@ void game_loop(elementos E, short *level,short *vida, short *pontos)
         if (pular)
         {
             // Para melhorar a legibilidade a lógica foi colocada numa função
-            logica_pular(E, &pular, &subir, &descer, &frame_cabine, &frame_chassi, &frame_roda);
+            logica_pular(&E, &pular, &subir, &descer, &frame_cabine, &frame_chassi, &frame_roda);
         }
         else // Senão está pulando, está rodando a roda
         {
