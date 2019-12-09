@@ -10,8 +10,8 @@
 
 /**
  * Observação: Eixo X e Y invertidos
- * Eixo X é vertical, ou seja representa as linhas (altura)
- * Eixo Y é horizontal, ou seja representa as colunas (distância da borda esquerda)
+ * Eixo X é VERTICAL, ou seja representa as linhas (altura)
+ * Eixo Y é HORIZONTAL, ou seja representa as colunas (distância da borda esquerda)
  *
  *   x
  *  ^
@@ -25,6 +25,15 @@ void gotoxy(short x, short y)
 {
     COORD position = {y, x}; // INVERSÃO DOS EIXOS
     SetConsoleCursorPosition( GetStdHandle(STD_OUTPUT_HANDLE), position);
+}
+
+
+void show_rank(janela J)
+{
+    // ...
+    printf("Aperte qualquer coisa para voltar ao menu");
+    getch();
+    system("cls");
 }
 
 
@@ -98,7 +107,7 @@ void pause(elementos E)
     while (pausa)
     {
         // Pega input do usuário caso uma tecla seja precionada
-        if (kbhit()) input = getch();
+        if ( kbhit() ) input = getch();
 
         // Processa o input
         switch (input)
@@ -179,7 +188,126 @@ void pause(elementos E)
 } // Fim da função pause()
 
 
-void game_loop(elementos E, short level,short *vida, short *pontos)
+void msg_do_level(elementos E, short level_atual)
+{
+    // Variáveis do level 1
+    char input;
+    char *msg_1 = "Pule os buracos para passar de fase ";
+    char *msg_2 = "Pressione ESPACO para iniciar ";
+
+    short i = 0;
+
+    coordenadas _msg_1 = {E.info.x, E.info.y -strlen(msg_1)/2};
+    coordenadas _msg_2 = {E.info.x +1, E.info.y -strlen(msg_2)/2};
+
+    // Variáveis do level 2
+    // ...
+
+    // Variáveis do level 3
+    // ...
+
+    if (level_atual == 1)
+    {
+        // Desenha informações adicionais do level 1
+        gotoxy(_msg_1.x, _msg_1.y);
+        printf("%s", msg_1);
+
+        gotoxy(_msg_2.x, _msg_2.y);
+        printf("%s", msg_2);
+
+        do { input = getch(); } while(input != ' '); // Espera o input
+
+        // Apaga as informações adicionais do level 1
+        gotoxy(_msg_1.x, _msg_1.y);
+        do { printf(" "); i++; } while (i < strlen(msg_1) );
+
+        i = 0; // Reseta o contador
+
+        gotoxy(_msg_2.x, _msg_2.y);
+        do { printf(" "); i++; } while(i < strlen(msg_2) );
+    }
+    else if (level_atual == 2)
+    {
+
+    }
+    else if (level_atual == 3)
+    {
+
+    }
+
+} // Fim da função msg_do_level();
+
+
+void logica_pular(elementos E, bool *pular, bool *subir, bool *descer, short *frame_cabine, short *frame_chassi, short *frame_roda)
+{
+    // Variáveis
+    char roda[] = "\\-/|U";
+    char chassi[] = "mmMM";
+    char cabine[] = "OoOo";
+
+    // Atualiza a altura
+    if (*subir)
+    {
+        E.buggy.x += -1; // Sobe o buggy
+
+        if (E.buggy.x < E.estrada.x -5) // Limita a altura max de subida
+        {
+            // Inverte subir e descer
+            *subir = false;
+            *descer = true;
+        }
+    }
+    else if (*descer)
+    {
+        E.buggy.x += +1; // Desce o buggy
+
+        if (E.buggy.x > E.estrada.x -3) // Limita a descida até o chão
+        {
+            // Finalização da animação do pulo
+            *descer = false;
+            *pular = false;
+
+            *frame_chassi = 0;
+            *frame_cabine = 0;
+        }
+    }
+
+    // Desenha o carro pulando
+    gotoxy(E.buggy.x, E.buggy.y);
+    printf("   %c%cn ", cabine[*frame_cabine], chassi[*frame_chassi]);
+
+    gotoxy(E.buggy.x +1, E.buggy.y);
+    if(E.buggy.x == E.estrada.x -2 || E.buggy.x == E.estrada.x -2)
+    {
+        printf("(U)-(U)");
+    }
+    else
+    {
+        printf("(%c)-(%c)", roda[*frame_roda], roda[*frame_roda]);
+    }
+
+    gotoxy(E.buggy.x +2, E.buggy.y); // Antiga posição das rodas
+    if (*subir || E.buggy.x != E.estrada.x -2) printf("       "); // Remove as rodas da tela
+
+    gotoxy(E.buggy.x -1, E.buggy.y); // Antiga posição do chassi
+    if (*descer || E.buggy.x != E.estrada.x -3) printf("       "); // Remove o chassi do buggy da tela
+
+    // Atualiza o frame do chassi e cabine
+    if(*frame_chassi < 3)
+    {
+        *frame_chassi += 1;
+        *frame_cabine += 1;
+    }
+    else
+    {
+        *frame_chassi = 0;
+        *frame_cabine = 0;
+    }
+
+}  // Fim da função logica_pular()
+
+
+void game_loop(elementos E, short *level,short *vida, short *pontos)
 {
     // Variáveis
     short frame_roda = 0;
@@ -187,8 +315,6 @@ void game_loop(elementos E, short level,short *vida, short *pontos)
     short frame_cabine = 0;
 
     char roda[] = "\\-/|U";
-    char chassi[] = "mmMM";
-    char cabine[] = "OoOo";
 
     char input; // Contém o input do usuário
 
@@ -200,7 +326,7 @@ void game_loop(elementos E, short level,short *vida, short *pontos)
     {
         // Pega input do usuário caso uma tecla seja precionada
         Sleep(150);
-        if (kbhit()) input = getch();
+        if ( kbhit() ) input = getch();
 
         // Processa o input
         switch (input)
@@ -221,67 +347,12 @@ void game_loop(elementos E, short level,short *vida, short *pontos)
         } // Fim do switch input
 
         // Renderiza as mudanças
-
         if (pular)
         {
-            // Atualiza a altura
-            if (subir)
-            {
-                E.buggy.x += -1; // Sobe o buggy
-
-                if (E.buggy.x < E.estrada.x -5)
-                {
-                    subir = false;
-                    descer = true;
-                }
-            }
-            else if (descer)
-            {
-                E.buggy.x += +1; // Desce o buggy
-
-                if (E.buggy.x > E.estrada.x -3)
-                {
-                    descer = false;
-                    pular = false; // Fim da animação do pulo
-
-                    frame_chassi = 0;
-                    frame_cabine = 0;
-                }
-            }
-
-            // Desenha o carro pulando
-            gotoxy(E.buggy.x, E.buggy.y);
-            printf("   %c%cn ", cabine[frame_cabine], chassi[frame_chassi]);
-
-            gotoxy(E.buggy.x +1, E.buggy.y);
-            if(E.buggy.x == E.estrada.x -2 || E.buggy.x == E.estrada.x -2)
-            {
-                printf("(U)-(U)");
-            }
-            else
-            {
-                printf("(%c)-(%c)", roda[frame_roda], roda[frame_roda]);
-            }
-
-            gotoxy(E.buggy.x +2, E.buggy.y); // Antiga posição das rodas
-            if (subir || E.buggy.x != E.estrada.x -2) printf("       "); // Remove as rodas da tela
-
-            gotoxy(E.buggy.x -1, E.buggy.y); // Antiga posição do chassi
-            if (descer || E.buggy.x != E.estrada.x -3) printf("       "); // Remove o chassi do buggy da tela
-
-            // Atualiza o frame do chassi e cabine
-            if(frame_chassi < 3)
-            {
-                frame_chassi++;
-                frame_cabine++;
-            }
-            else
-            {
-                frame_chassi = 0;
-                frame_cabine = 0;
-            }
+            // Para melhorar a legibilidade a lógica foi colocada numa função
+            logica_pular(E, &pular, &subir, &descer, &frame_cabine, &frame_chassi, &frame_roda);
         }
-        else
+        else // Senão está pulando, está rodando a roda
         {
             // Animação da roda do carro
             gotoxy(E.buggy.x +1, E.buggy.y +1);
@@ -304,67 +375,27 @@ void game_loop(elementos E, short level,short *vida, short *pontos)
         // Limpa o input
         input = -1;
 
-        // Atualiza o pontos
+        // Atualiza os pontos
         *pontos += 1;
+
+        // Atualiza o level
+        if (*pontos == 200 || *pontos == 400)
+        {
+            *level += 1;
+        }
 
         // Atualiza o HUD
         gotoxy(E.HUD.x, E.HUD.y);
-        printf("Level: %d    Life: %d    Score: %d", level, *vida, *pontos);
+        printf("Level: %d    Life: %d    Score: %d", *level, *vida, *pontos);
 
     } // Fim do while (game_loop)
 
 } // Fim da função game_loop()
 
 
-void level_1(janela J, elementos E, short *vida, short *pontos)
-{
-    //Variáveis
-    char input;
-    char *msg_1 = "Pule os buracos para passar de fase ";
-    char *msg_2 = "Pressione ESPACO para iniciar ";
-
-    short i = 0;
-
-    desenha_cenario(J, E, 1, *vida, *pontos);
-
-    // Desenha informações adicionais do level 1
-    gotoxy(E.info.x, E.info.y -strlen(msg_1)/2);
-    printf("%s", msg_1);
-
-    gotoxy(E.info.x +1, E.info.y -strlen(msg_2)/2);
-    printf("%s", msg_2);
-
-    do { input = getch(); } while(input != ' ');
-
-
-    // Apaga a mensagem inicial
-    gotoxy(E.info.x, E.info.y -strlen(msg_1)/2);
-    do { printf(" "); i++; } while (i < strlen(msg_1) );
-
-    i = 0; // Reseta o contador
-
-    gotoxy(E.info.x +1, E.info.y -strlen(msg_2)/2);
-    do { printf(" "); i++; } while(i < strlen(msg_2) );
-
-    game_loop(E, 1, vida, pontos); // Inicia a gameplay
-
-} // Fim da função level_1()
-
-
-void level_2(janela J, elementos E, short *vida, short *pontos)
-{
-    // ...
-}
-
-
-void level_3(janela J, elementos E, short *vida, short *pontos)
-{
-    // ...
-}
-
-
 void play_game(janela J)
 {
+    short level = 1;
     short vida = 3;
     short pontos = 0;
 
@@ -382,11 +413,12 @@ void play_game(janela J)
     E.info.x = J.linhas*3/4 -6;
     E.info.y = J.colunas/2;
 
-    level_1(J, E, &vida, &pontos);
+    desenha_cenario(J, E, level, vida, pontos); // Desenha o HUD da gameplay
 
-    level_2(J, E, &vida, &pontos);
+    msg_do_level(E, 1); // Desenha mensagem do inicio do jogo
 
-    level_3(J, E, &vida, &pontos);
+    game_loop(E, &level, &vida, &pontos); // Inicia a gameplay
+
 }
 
 
@@ -564,16 +596,19 @@ void play_game_old(janela J)
 void menu(janela J)
 {
     // Variáveis
+    char *play_msg = "JOGAR";
+    char *rank_msg = "Rank dos jogadores";
+    char *exit_msg = "Sair do jogo";
     char input = -1; // Contém o input do usuário
 
     bool novo_frame = true;
     bool menu = true;
 
     coordenadas info = {J.linhas/2, J.colunas/8};
-    coordenadas seta = {J.linhas/2, J.colunas/2 -6};
-    coordenadas play = {J.linhas/2, J.colunas/2 -2};
-    coordenadas rank = {J.linhas/2 +2, J.colunas/2 -2};
-    coordenadas exit = {J.linhas/2 +4, J.colunas/2 -2};
+    coordenadas seta = {J.linhas/2, J.colunas/2 -strlen(play_msg) -4};
+    coordenadas play = {J.linhas/2, J.colunas/2 -strlen(play_msg)/2};
+    coordenadas rank = {J.linhas/2 +2, J.colunas/2 -strlen(rank_msg)/2};
+    coordenadas exit = {J.linhas/2 +4, J.colunas/2 -strlen(exit_msg)/2};
 
 
     // Desenha o título do jogo
@@ -596,23 +631,23 @@ void menu(janela J)
 
     // Desenha o botão PLAY
     gotoxy(play.x, play.y);
-    printf("PLAY");
+    printf("%s", play_msg);
 
 
     //Desenha o botão RANK
     gotoxy(rank.x, rank.y);
-    printf("RANK");
+    printf("%s", rank_msg);
 
 
     //Desenha o botão EXIT
     gotoxy(exit.x, exit.y);
-    printf("EXIT");
+    printf("%s", exit_msg);
 
 
     while (menu)
     {
         // Pega input do usuário caso uma tecla seja precionada
-        if (kbhit()) input = getch();
+        if ( kbhit() ) input = getch();
 
         // Processa o input
         switch (input)
@@ -624,7 +659,19 @@ void menu(janela J)
                 gotoxy(seta.x, seta.y);
                 printf("   ");
 
-                seta.x += -2; // Movimenta a seta
+                seta.x += -2; // Movimenta a seta para cima
+                if (seta.x == play.x)
+                {
+                    seta.y = play.y -4;
+                }
+                else if(seta.x == rank.x)
+                {
+                    seta.y = rank.y -4;
+                }
+                else if(seta.x == exit.x)
+                {
+                    seta.y =  exit.y -4;
+                }
 
                 novo_frame = true; // Re-desenha a seta para cima
             }
@@ -637,7 +684,19 @@ void menu(janela J)
                 gotoxy(seta.x, seta.y);
                 printf("   ");
 
-                seta.x += 2; // Movimenta a seta
+                seta.x += 2; // Movimenta a seta para baixo
+                if (seta.x == play.x)
+                {
+                    seta.y = play.y -4;
+                }
+                else if(seta.x == rank.x)
+                {
+                    seta.y = rank.y -4;
+                }
+                else if(seta.x == exit.x)
+                {
+                    seta.y =  exit.y -4;
+                }
 
                 novo_frame = true; // Re-desenha a seta para baixo
             }
@@ -653,7 +712,21 @@ void menu(janela J)
             else if (seta.x == rank.x)
             {
                 system("cls");
-                //show_rank(J);
+                show_rank(J);
+
+                // Re-desenha o menu
+                gotoxy(info.x, info.y);
+                printf("Mover seta: W(cima) S(baixo)");
+                gotoxy(info.x +1, info.y);
+                printf("Selecionar: espaco(escolher)");
+                gotoxy(seta.x, seta.y);
+                printf("-->");
+                gotoxy(play.x, play.y);
+                printf("%s", play_msg);
+                gotoxy(rank.x, rank.y);
+                printf("%s", rank_msg);
+                gotoxy(exit.x, exit.y);
+                printf("%s", exit_msg);
             }
             else if (seta.x == seta.x)
             {
