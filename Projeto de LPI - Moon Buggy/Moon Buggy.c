@@ -30,8 +30,19 @@ void gotoxy(short x, short y)
 
 void show_rank(janela J)
 {
-    // ...
-    printf("Aperte qualquer coisa para voltar ao menu");
+    // variável
+    char *texto;
+
+    // Coloca o primeiro texto
+    texto = "Aperte qualquer coisa para voltar ao menu";
+    gotoxy(J.linhas/2, J.colunas/2 - strlen(texto)/2);
+    puts(texto);
+
+    // Coloca o segundo texto
+    texto = "Sistema de rank ainda nao implementado";
+    gotoxy(J.linhas/2 +1, J.colunas/2 - strlen(texto)/2);
+    puts(texto);
+
     getch();
     system("cls");
 }
@@ -190,61 +201,75 @@ void pause(elementos E)
 
 void msg_do_level(elementos E, short level_atual)
 {
-    // Variáveis do level 1
+    // Variáveis
     char input;
-    char *msg_1 = "Pule os buracos para passar de fase ";
-    char *msg_2 = "Pressione ESPACO para iniciar ";
+    char *msg_1;
+    char *msg_2;
 
     short i = 0;
 
-    coordenadas _msg_1 = {E.info.x, E.info.y -strlen(msg_1)/2};
-    coordenadas _msg_2 = {E.info.x +1, E.info.y -strlen(msg_2)/2};
-
-    // Variáveis do level 2
-    // ...
-
-    // Variáveis do level 3
-    // ...
+    coordenadas _msg_1;
+    coordenadas _msg_2;
 
     if (level_atual == 1)
     {
-        // Desenha informações adicionais do level 1
-        gotoxy(_msg_1.x, _msg_1.y);
-        printf("%s", msg_1);
-
-        gotoxy(_msg_2.x, _msg_2.y);
-        printf("%s", msg_2);
-
-        do { input = getch(); } while(input != ' '); // Espera o input
-
-        // Apaga as informações adicionais do level 1
-        gotoxy(_msg_1.x, _msg_1.y);
-        do { printf(" "); i++; } while (i < strlen(msg_1) );
-
-        i = 0; // Reseta o contador
-
-        gotoxy(_msg_2.x, _msg_2.y);
-        do { printf(" "); i++; } while(i < strlen(msg_2) );
+        msg_1 = "Pule <SPC> os buracos para passar de fase ";
+        msg_2 = "Pressione ESPACO para iniciar ";
     }
     else if (level_atual == 2)
     {
-
+        msg_1 = "Buracos maiores a frente!!!";
+        msg_2 = "Pressiona ESPACO para continuar";
     }
     else if (level_atual == 3)
     {
-
+        msg_1 = "Pilhas de pedra e areia na frente!!!";
+        msg_2 = "Atire <Z> para continuar!";
     }
+    else
+    {
+        msg_1 = "ERRO";
+        msg_2 = "ERRO";
+    }
+
+    // Calcula as coodenadas com base na msg que vai ser escrita
+    _msg_1.x = E.info.x;
+    _msg_1.y = E.info.y -strlen(msg_1)/2;
+
+    _msg_2.x = E.info.x +1;
+    _msg_2.y = E.info.y -strlen(msg_2)/2;
+
+    // Desenha informações adicionais do level 1
+    gotoxy(_msg_1.x, _msg_1.y);
+    printf("%s", msg_1);
+
+    gotoxy(_msg_2.x, _msg_2.y);
+    printf("%s", msg_2);
+
+    // Espera o input
+    if(level_atual != 3)
+    {
+        do { input = getch(); } while(input != ' ');
+    }
+    else
+    {
+        do { input = getch(); } while(input != 'z');
+    }
+
+    // Apaga as mensagens
+    gotoxy(_msg_1.x, _msg_1.y);
+    do { printf(" "); i++; } while (i < strlen(msg_1) );
+
+    i = 0; // Reseta o contador
+
+    gotoxy(_msg_2.x, _msg_2.y);
+    do { printf(" "); i++; } while(i < strlen(msg_2) );
 
 } // Fim da função msg_do_level();
 
 
-void logica_pular(elementos *E, bool *pular, bool *subir, bool *descer, short *frame_cabine, short *frame_chassi, short *frame_roda)
+void logica_pular(elementos *E, bool *pular, bool *subir, bool *descer)
 {
-    // Variáveis
-    char roda[] = "\\-/|U";
-    char chassi[] = "mmMM";
-    char cabine[] = "OoOo";
-
     // Atualiza a altura
     if (*subir)
     {
@@ -266,18 +291,25 @@ void logica_pular(elementos *E, bool *pular, bool *subir, bool *descer, short *f
             // Finalização da animação do pulo
             *descer = false;
             *pular = false;
-
-            *frame_chassi = 0;
-            *frame_cabine = 0;
         }
     }
 
+} // Fim da função pular()
+
+
+void desenhar_pulo(elementos E,bool subir, short *frame_cabine, short *frame_chassi, short *frame_roda)
+{
+    // Variáveis
+    char roda[] = "\\-/|U";
+    char chassi[] = "mmMM";
+    char cabine[] = "OoOo";
+
     // Desenha o carro pulando
-    gotoxy(E->buggy.x, E->buggy.y);
+    gotoxy(E.buggy.x, E.buggy.y);
     printf("   %c%cn ", cabine[*frame_cabine], chassi[*frame_chassi]);
 
-    gotoxy(E->buggy.x +1, E->buggy.y);
-    if(E->buggy.x == E->estrada.x -2 || E->buggy.x == E->estrada.x -2)
+    gotoxy(E.buggy.x +1, E.buggy.y);
+    if(E.buggy.x == E.estrada.x -2 || E.buggy.x == E.estrada.x -2)
     {
         printf("(U)-(U)");
     }
@@ -286,11 +318,11 @@ void logica_pular(elementos *E, bool *pular, bool *subir, bool *descer, short *f
         printf("(%c)-(%c)", roda[*frame_roda], roda[*frame_roda]);
     }
 
-    gotoxy(E->buggy.x +2, E->buggy.y); // Antiga posição das rodas
-    if (*subir || E->buggy.x != E->estrada.x -2) printf("       "); // Remove as rodas da tela
+    gotoxy(E.buggy.x +2, E.buggy.y); // Antiga posição das rodas
+    if (subir || E.buggy.x != E.estrada.x -2) printf("       "); // Remove as rodas da tela
 
-    gotoxy(E->buggy.x -1, E->buggy.y); // Antiga posição do chassi
-    if (*descer || E->buggy.x != E->estrada.x -3) printf("       "); // Remove o chassi do buggy da tela
+    gotoxy(E.buggy.x -1, E.buggy.y); // Antiga posição do chassi
+    if (!subir || E.buggy.x != E.estrada.x -3) printf("       "); // Remove o chassi do buggy da tela
 
     // Atualiza o frame do chassi e cabine
     if(*frame_chassi < 3)
@@ -304,7 +336,39 @@ void logica_pular(elementos *E, bool *pular, bool *subir, bool *descer, short *f
         *frame_cabine = 0;
     }
 
-}  // Fim da função logica_pular()
+} // Fim da função desenhar_pulo()
+
+
+void gerar_obstaculo(short *obstaculos, short level, short max, short *espacamento)
+{
+    // Variáveis
+    // short tamanho;
+    short i;
+
+    if (level < 3) // cria um buraco
+    {
+        // So gera um obstáculo após espaçamento chegar a 0 novamente
+        if (*espacamento == 0)
+        {
+            gotoxy(1, 1);
+            printf("AKI 2");
+
+            for(i = 0; i < max; i++)
+            {
+                if (obstaculos[i] == -1)
+                {
+                    obstaculos[i] = 0;
+                    *espacamento = rand() % 10 +11; // Gera números de 10 à 20
+                    break;
+                }
+            }
+        }
+    }
+    else // Senão cria um monte de pedra e areia
+    {
+
+    }
+}
 
 
 void game_loop(elementos E, short *level,short *vida, short *pontos)
@@ -314,7 +378,14 @@ void game_loop(elementos E, short *level,short *vida, short *pontos)
     short frame_chassi = 0;
     short frame_cabine = 0;
 
-    char roda[] = "\\-/|U";
+    short i = 0;
+    short max = 10; // Máx de 10 obstáculos no jogo
+    short obstaculos[] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+    short espacamento = 0; // Espaço de estrada entre obstáculos
+    short hitbox = E.buggy.y;
+    short limite_direita = E.buggy.y*4/3;
+
+    char roda[] = "\\-/|U"; // Charactéres da roda
 
     char input; // Contém o input do usuário
 
@@ -338,6 +409,13 @@ void game_loop(elementos E, short *level,short *vida, short *pontos)
                 subir = true;
             }
             break;
+        case 'z':
+            if(*level >= 3)
+            {
+
+                //atirar(); // Lógica do tiro
+            }
+            break;
         case 'p':
             gotoxy(1, 1);
             printf("Pausado");
@@ -349,11 +427,18 @@ void game_loop(elementos E, short *level,short *vida, short *pontos)
         // Renderiza as mudanças
         if (pular)
         {
-            // Para melhorar a legibilidade a lógica foi colocada numa função
-            logica_pular(&E, &pular, &subir, &descer, &frame_cabine, &frame_chassi, &frame_roda);
+            // Lógica do pulo
+            logica_pular(&E, &pular, &subir, &descer);
+
+            // Desenha o carro enquanto pula
+            desenhar_pulo(E, subir, &frame_chassi, &frame_cabine, &frame_roda);
         }
         else // Senão está pulando, está rodando a roda
         {
+            // Ajusta o frame da cabine e do chassi após o pulo
+            gotoxy(E.buggy.x, E.buggy.y);
+            printf("   Omn");
+
             // Animação da roda do carro
             gotoxy(E.buggy.x +1, E.buggy.y +1);
             printf("%c", roda[frame_roda]);
@@ -362,7 +447,7 @@ void game_loop(elementos E, short *level,short *vida, short *pontos)
             printf("%c", roda[frame_roda]);
 
             // Atualiza o frame da roda
-            if(frame_roda < 3)
+            if (frame_roda < 3)
             {
                 frame_roda++;
             }
@@ -375,6 +460,61 @@ void game_loop(elementos E, short *level,short *vida, short *pontos)
         // Limpa o input
         input = -1;
 
+        // Gera os obstáculos de acordo com o level
+        if (*level == 1 && *pontos > 10)
+        {
+            gotoxy(1, 1); printf("Gerou obstaculo");
+            gerar_obstaculo(obstaculos, *level, max, &espacamento);
+        }
+        else if (*level == 2 && *pontos > 210)
+        {
+            gerar_obstaculo(obstaculos, *level, max, &espacamento);
+        }
+        else if(*level == 3 && *pontos > 410)
+        {
+            gerar_obstaculo(obstaculos, *level, max, &espacamento);
+        }
+
+        // Atualiza os obstáculosa
+        for(i = 0; i < max; i++)
+        {
+            // Atualiza a posição se o obstáculo existir
+            if (obstaculos[i] != -1) obstaculos[i] += 1;
+
+            // Retira o obstáculo ao chegar no fim da estrada
+            if (obstaculos[i] == limite_direita) obstaculos[i] = -1;
+        }
+
+        // Desenha os buracos
+        for(i = 0; i < max; i++)
+        {
+            // Desenha apenas os obstáculos existentes
+            if (obstaculos[i] != -1)
+            {
+                gotoxy(E.estrada.x, obstaculos[i]);
+                printf(" ");
+
+                gotoxy(E.estrada.x, obstaculos[i] -1);
+                printf("#");
+            }
+        }
+
+        // Confere se o carro não caio ou bateu
+        for(i = 0; i < max; i++)
+        {
+            if (hitbox == obstaculos[i] && E.buggy.x == E.estrada.x -2)
+            {
+                *vida += -1; // Perde 1 vida
+
+                // Mensagem de RIP
+                gotoxy(E.info.x, E.info.y -2);
+                printf("RIP ");
+            }
+        }
+
+        // Atualiza o espacamento entre obstáculos
+        if (espacamento > 0) espacamento += -1;
+
         // Atualiza os pontos
         *pontos += 1;
 
@@ -382,6 +522,7 @@ void game_loop(elementos E, short *level,short *vida, short *pontos)
         if (*pontos == 200 || *pontos == 400)
         {
             *level += 1;
+            msg_do_level(E, *level);
         }
 
         // Atualiza o HUD
@@ -420,177 +561,6 @@ void play_game(janela J)
     game_loop(E, &level, &vida, &pontos); // Inicia a gameplay
 
 }
-
-
-void play_game_old(janela J)
-{
-    // Variáveis
-    short contador = 0;
-
-    int frame_roda = 0;
-    int frame_chassi = 0;
-    int frame_cabine = 0;
-
-    int level = 1;
-    short vida = 3;
-    short pontos = 0;
-
-    char roda[] = "\\-/|U";
-    char chassi[] = "mmMM";
-    char cabine[] = "OoOo";
-    char input; // Contém o input do usuário
-
-    bool pular = false, subir = false, descer = false;
-    bool game_loop = true;
-
-    coordenadas estrada = {J.linhas*3/4, 0};
-    coordenadas buggy = {J.linhas*3/4 -2, J.colunas*3/4};
-    coordenadas HUD = {estrada.x +2, J.colunas/2 -15};
-
-    // Desenha a estrada
-    gotoxy(estrada.x, estrada.y);
-
-    do
-    {
-        printf("#");
-        contador++;
-
-    } while (contador < J.colunas);
-
-    gotoxy(estrada.x +1, estrada.y);
-
-    contador = 0;
-    do
-    {
-        printf("#");
-        contador++;
-
-    } while (contador < J.colunas);
-
-
-    // Desenha o buggy
-    gotoxy(buggy.x, buggy.y);
-    printf("   Omn ");
-
-    gotoxy(buggy.x +1, buggy.y);
-    printf("(\\)-(\\)");
-
-
-    // Desenha HUD (level, life, score, controles)
-    gotoxy(HUD.x, HUD.y);
-    printf("Level: %d    Life: %d    Score %d", level, vida, pontos);
-
-
-    while (game_loop)
-    {
-        // Pega input do usuário caso uma tecla seja precionada
-        Sleep(150);
-        if (kbhit()) input = getch();
-
-        // Processa o input
-        switch (input)
-        {
-        case ' ':
-            if(pular == false)
-            {
-                pular = true;
-                subir = true;
-            }
-            break;
-        case 'p':
-            //pause();
-            gotoxy(1, 1);
-            printf("Pause");
-            break;
-
-        } // Fim do switch input
-
-        // Renderiza as mudanças
-        if (pular)
-        {
-            // Atualiza a altura
-            if (subir)
-            {
-                buggy.x += -1; // Sobe o buggy
-
-                if (buggy.x < estrada.x -5)
-                {
-                    subir = false;
-                    descer = true;
-                }
-            }
-            else if (descer)
-            {
-                buggy.x += +1; // Desce o buggy
-
-                if (buggy.x > estrada.x -3)
-                {
-                    descer = false;
-                    pular = false; // Fim da animação do pulo
-
-                    frame_chassi = 0;
-                    frame_cabine = 0;
-                }
-            }
-
-            // Desenha o carro pulando
-            gotoxy(buggy.x, buggy.y);
-            printf("   %c%cn ", cabine[frame_cabine], chassi[frame_chassi]);
-
-            gotoxy(buggy.x +1, buggy.y);
-            if(buggy.x == estrada.x -2 || buggy.x == estrada.x -2)
-            {
-                printf("(U)-(U)");
-            }
-            else
-            {
-                printf("(%c)-(%c)", roda[frame_roda], roda[frame_roda]);
-            }
-
-            gotoxy(buggy.x +2, buggy.y); // Antiga posição das rodas
-            if (subir || buggy.x != estrada.x -2) printf("       "); // Remove as rodas da tela
-
-            gotoxy(buggy.x -1, buggy.y); // Antiga posição do chassi
-            if (descer || buggy.x != estrada.x -3) printf("       "); // Remove o chassi do buggy da tela
-
-            // Atualiza o frame do chassi e cabine
-            if(frame_chassi < 3)
-            {
-                frame_chassi++;
-                frame_cabine++;
-            }
-            else
-            {
-                frame_chassi = 0;
-                frame_cabine = 0;
-            }
-        }
-        else
-        {
-            // Animação da roda do carro
-            gotoxy(buggy.x +1, buggy.y +1);
-            printf("%c", roda[frame_roda]);
-
-            gotoxy(buggy.x +1, buggy.y +5);
-            printf("%c", roda[frame_roda]);
-
-            // Atualiza o frame da roda
-            if(frame_roda < 3)
-            {
-                frame_roda++;
-            }
-            else
-            {
-                frame_roda = 0;
-            }
-        }
-
-        // Limpa o input
-        input = -1;
-
-    } // Fim do while (game_loop)
-
-} // Fim da função play_game()
 
 
 void menu(janela J)
@@ -759,3 +729,4 @@ void init_game(janela J)
 {
     menu(J);
 }
+
