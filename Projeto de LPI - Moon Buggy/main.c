@@ -22,7 +22,7 @@ int main()
 
     janela J = {linha, coluna}; // J = janela
 
-    srand(time(NULL));
+    srand(time(NULL)); // inicia a seed de número aleatórios
 
     ////////////////////////
 
