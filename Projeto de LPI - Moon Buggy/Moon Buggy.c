@@ -80,16 +80,43 @@ void desenha_cenario(janela J, elementos E, short level, short vida, short ponto
         contador++;
 
     } while (contador < J.colunas);
+    contador = 0; // Reseta o contador
 
     gotoxy(E.estrada.x +1, E.estrada.y);
-    contador = 0;
     do
     {
         printf("#");
         contador++;
 
     } while (contador < J.colunas);
+    contador = 0; // Reseta o contador
 
+    // Apaga as 3 linhas acima da estrada (reset dps que morre)
+    gotoxy(E.estrada.x -1, E.estrada.y);
+    do
+    {
+        printf(" ");
+        contador++;
+
+    } while (contador < J.colunas);
+    contador = 0; // Reseta o contador
+
+    gotoxy(E.estrada.x -2, E.estrada.y);
+    do
+    {
+        printf(" ");
+        contador++;
+
+    } while (contador < J.colunas);
+    contador = 0; // Reseta o contador
+
+    gotoxy(E.estrada.x -3, E.estrada.y);
+    do
+    {
+        printf(" ");
+        contador++;
+
+    } while (contador < J.colunas);
 
     // Desenha o buggy
     gotoxy(E.buggy.x, E.buggy.y);
@@ -97,10 +124,6 @@ void desenha_cenario(janela J, elementos E, short level, short vida, short ponto
 
     gotoxy(E.buggy.x +1, E.buggy.y);
     printf("(\\)-(\\)");
-
-    // Apaga a roda que sai quado morre
-    gotoxy(E.buggy.x +1, E.buggy.y -14);
-    printf(" ");
 
     // Desenha HUD (level, life, score, controles)
     gotoxy(E.HUD.x, E.HUD.y);
@@ -535,7 +558,7 @@ void gerar_pedra(short *pedras, short* altura_pedra, short max, short *espacamen
         // Busca no vetor o índice de um obstáculo que não está sendo utilizado
         for(i = 0; i < max; i++)
         {
-            // Caso acho algum espaço livre, cria um obstáculo
+            // Caso exista algum espaço livre, cria um obstáculo
             if (pedras[i] == -1)
             {
                 pedras[i] = 0;
@@ -585,15 +608,18 @@ void atualiza_pedras(elementos E, short *pedras, short *altura_pedras, short max
         // Atualiza a posição se a pedra existir
         if (pedras[i] != -1) pedras[i] += 1;
 
+
         // Retira a pedra ao chegar no fim
         if (pedras[i] == limite_direita)
         {
             // Apaga toda a pilha de pedras
             for(j = 0; j < altura_pedras[i]; j++)
             {
-                gotoxy(E.estrada.x +1 +j, pedras[i]);
-                printf(" ");
+                gotoxy(E.estrada.x -1 -j, pedras[i]-1);
+                printf("E");
             }
+
+            pedras[i] = -1;
         }
     }
 }
@@ -912,7 +938,14 @@ void verificar_colisao_buraco(elementos E, short *buracos, short *largura_buraco
 
 void morte_pedra(elementos E, short pedra, short altura_pedra, short max_pedras)
 {
-    // Animação da morte ao bater numa pedra
+    // Frame da morte ao bater numa pedra
+    gotoxy(E.buggy.x, E.buggy.y+1);
+    printf("cn_  _ ");
+
+    gotoxy(E.buggy.x +1, E.buggy.y+1);
+    printf("OMM_nb ");
+
+    Sleep(1500);
 }
 
 
@@ -923,22 +956,97 @@ void verificar_colisao_pedra(elementos E, short *pedras, short *altura_pedra, sh
 
     for(i = 0; i < max; i++)
     {
-        // Desenha a pedra apenas se ela existe
+        // Se pedra existe
         if (pedras[i] != -1)
         {
-            //morte_pedra(E, pedras[i], altura_pedra[i], max_pedras);
+            if (pedras[i] == E.buggy.y && E.buggy.x == E.estrada.x-2)
+            {
+                *vida -= 1; // Perde 1 vida
+                *game_loop = false; // Acaba a iteração da vida
+                morte_pedra(E, pedras[i], altura_pedra[i], max);
+            }
         }
     }
 } // Fim da função verificar_colisão_pedra()
 
 
-void atualizar_tiro(elementos E, short *tiros, short max_tiro, short *pedras, short *altura_pedras, short max_pedra)
+void atualizar_tiro(elementos E, short *tiros, short max_tiros, short *pedras, short *altura_pedra, short max_pedras, bool debug_mode)
 {
-    // Variáveis
-    coordenadas tiro = {E.buggy.x, E.buggy.y -2};
+    // variáveis
+    int i, j;
+
+    for(i = 0; i < max_tiros; i++)
+    {
+        // Se o tiro existir
+        if (tiros[i] > -1)
+        {
+            tiros[i] -= 1;// Atualiza a posição
+
+            if (tiros[i] == E.estrada.y-1)
+            {
+                gotoxy(E.estrada.x-1, tiros[i]);
+                printf(" ");
+
+                tiros[i] = -1;
+            }
+
+            // Colisão do tiro com a pedra
+            for(j = 0; j < max_pedras; j++)
+            {
+                // Se tiro tocar na pedra
+                if (tiros[i] == pedras[j] || tiros[i] == pedras[j]-1)
+                {
+                    // Reseta o tiro e a pedra (pedra redesenhada)
+                    //gotoxy(E.estrada.x -1, pedras[i]);
+                    //if (tiros[i] > -1) printf("C");
+                    //gotoxy(E.estrada.x -1, pedras[i]-1);
+                    //if (tiros[i] > -1) printf("%i", pedras[i]);
+
+                    tiros[i] = -1;
+
+                    // Pedra diminui de tamanaho ou é completamente destruida
+                    if (altura_pedra[j] == 1)
+                    {
+                        gotoxy(E.estrada.x -1, pedras[j]);
+                        printf(" ");
+
+                        altura_pedra[j] = -1;
+                        pedras[j] = -1;
+                    }
+                    else if (altura_pedra[j] > 1)
+                    {
+                        gotoxy(E.estrada.x -altura_pedra[j], pedras[j]);
+                        printf(" ");
+
+                        altura_pedra[j] -= 1;
+                    }
+                }
+            }
+            if (debug_mode)
+            {
+                gotoxy(6, 1);
+                printf("1:%i | 2:%i", tiros[0], tiros[1]);
+            }
+
+        }
+    }
 
 
-}
+
+    // Desenha as mudanças do tiro
+    for(i = 0; i < max_tiros; i++)
+    {
+        if (tiros[i] != -1)
+        {
+            gotoxy(E.estrada.x -1, tiros[i]+1);
+            printf(" ");
+
+            gotoxy(E.estrada.x -1, tiros[i]);
+            printf("<");
+        }
+    }
+
+} // Fim da função atualizar_tiro()
 
 
 void game_loop(elementos E, short *level,short *vida, short *pontos)
@@ -953,9 +1061,9 @@ void game_loop(elementos E, short *level,short *vida, short *pontos)
     short largura_buraco[max_buracos]; // Guarda o tamanho de cada buraco
     // Ex: buracos[i] tem tamanho_buraco[i]
 
-    short max_pedras  = 10; // Máx de 10 pilhas de pedras
+    short max_pedras  = 20; // Máx de 20 pilhas de pedras
     short pedras[max_pedras];
-    short altura_pedra[max_pedras];  // Guarda a altura de cada buraco
+    short altura_pedra[max_pedras];  // Guarda a altura de cada pedra
     // Ex: pedras[i] tem tamanho_pedra[i]
 
     short espacamento = 0; // Espaço de estrada entre obstáculos
@@ -963,8 +1071,8 @@ void game_loop(elementos E, short *level,short *vida, short *pontos)
 
     short tempo_ar = 0;
 
-    short max_tiros = 0;
-    short tiros[2] = {-1, -1};
+    short max_tiros = 2;
+    short tiros[max_tiros];
 
     char roda[] = "\\-/|U"; // Charactéres da roda
 
@@ -978,9 +1086,10 @@ void game_loop(elementos E, short *level,short *vida, short *pontos)
     // Preenche os vetores de buraco e pedra com um número em todas as posições
     preencher_vetor(max_buracos, buracos, -1);
     preencher_vetor(max_pedras, pedras, -1);
+    preencher_vetor(max_tiros, tiros, -1);
 
     preencher_vetor(max_buracos, largura_buraco, 1);
-    preencher_vetor(max_pedras, altura_pedra, 1);
+    preencher_vetor(max_pedras, altura_pedra, -1);
 
     while (game_loop)
     {
@@ -1004,10 +1113,7 @@ void game_loop(elementos E, short *level,short *vida, short *pontos)
         case 'z':
             if(*level >= 1)
             {
-                // Posiciona o tiro na tela
-                gotoxy(E.buggy.x +1, E.buggy.y -2);
-                printf("<");
-
+                // Gera um tiro caso existe um slot livre
                 if (tiros[0] == -1)
                 {
                     tiros[0] = E.buggy.y -2;
@@ -1073,18 +1179,20 @@ void game_loop(elementos E, short *level,short *vida, short *pontos)
         // Os pontos marcam o intervalo sem obstáculos entre levels
         if (*level == 1 && *pontos > 5)
         {
-            gerar_buraco_pequeno(buracos, largura_buraco, max_buracos, &espacamento, debug_mode);
+            gerar_pedra(pedras, altura_pedra, max_pedras, &espacamento, debug_mode);
+            //gerar_buraco_pequeno(buracos, largura_buraco, max_buracos, &espacamento, debug_mode);
         }
         else if (*level == 2 && *pontos > 230)
         {
+            gerar_pedra(pedras, altura_pedra, max_pedras, &espacamento, debug_mode);
             // Pode gerar buracos pequenos ou grandes
-            gerar_buraco_grande(buracos, largura_buraco, max_buracos, &espacamento, debug_mode);
+            //gerar_buraco_grande(buracos, largura_buraco, max_buracos, &espacamento, debug_mode);
         }
         else if (*level == 3 && *pontos > 430)
         {
             if (rand() % 2)
             {
-                gerar_buraco_pequeno(buracos, largura_buraco, max_pedras, &espacamento, debug_mode);
+                //gerar_buraco_pequeno(buracos, largura_buraco, max_pedras, &espacamento, debug_mode);
             }
             else
             {
@@ -1092,14 +1200,14 @@ void game_loop(elementos E, short *level,short *vida, short *pontos)
             }
         }
 
+        // Atualiza a posição y (coluna) do tiro
+        atualizar_tiro(E, tiros, max_tiros, pedras, altura_pedra, max_pedras, debug_mode);
+
         // Atualiza a posição y (coluna) dos buracos
         atualizar_buracos(E, buracos, largura_buraco, max_buracos, limite_direita);
 
         // Atualiza a posição y (coluna) das pilhas de pedra
         atualiza_pedras(E, pedras, altura_pedra, max_pedras, limite_direita);
-
-        // Atualiza a posição y (coluna) do tiro
-        atualizar_tiro(E, tiros, max_tiros, pedras, altura_pedra, max_pedras);
 
         // Desenha os buracos no terminal
         desenhar_buracos(E, buracos, largura_buraco, max_buracos);
@@ -1121,8 +1229,10 @@ void game_loop(elementos E, short *level,short *vida, short *pontos)
             verificar_colisao_buraco(E, buracos, largura_buraco, max_buracos, vida, &game_loop);
         }
 
-        // verificar_colisao_pedra(E, pedras, altura_pedra, max_pedras, vida, &game_loop);
-
+        if (game_loop)
+        {
+            verificar_colisao_pedra(E, pedras, altura_pedra, max_pedras, vida, &game_loop);
+        }
 
         // Atualiza o espaçamento entre obstáculos
         if (espacamento > 0) espacamento -= 1;

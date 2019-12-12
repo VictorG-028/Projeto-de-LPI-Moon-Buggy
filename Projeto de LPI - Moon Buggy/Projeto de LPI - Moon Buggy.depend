@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1575942773 source:c:\users\victor\desktop\c_scripts\projeto de lpi - moon buggy\main.c
+1576111089 source:c:\users\victor\desktop\c_scripts\projeto de lpi - moon buggy\main.c
 	<stdio.h>
 	<stdlib.h>
 	<string.h>
@@ -11,7 +11,7 @@
 
 1575943972 c:\users\victor\desktop\c_scripts\projeto de lpi - moon buggy\moon buggy.h
 
-1576107384 source:c:\users\victor\desktop\c_scripts\projeto de lpi - moon buggy\moon buggy.c
+1576118388 source:c:\users\victor\desktop\c_scripts\projeto de lpi - moon buggy\moon buggy.c
 	<stdio.h>
 	<stdlib.h>
 	<string.h>

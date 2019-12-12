@@ -14,7 +14,7 @@ int main()
 
     CONSOLE_SCREEN_BUFFER_INFO console_info; // Contém informações do terminal do Code::Blocks
 
-    // Preenche o console_info com as informações
+    // Preenche a variável console_info com as informações
     GetConsoleScreenBufferInfo( GetStdHandle(STD_OUTPUT_HANDLE), &console_info);
 
     short linha = console_info.srWindow.Bottom - console_info.srWindow.Top + 1;
