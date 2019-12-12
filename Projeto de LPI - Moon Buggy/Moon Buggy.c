@@ -58,13 +58,22 @@ void show_rank(janela J)
 }
 
 
+void gravar_pontuacao()
+{
+    while(1)
+    {
+        if (rand() % 10 == 0) printf("X");
+    }
+
+} // Fim da função gravar_pontuação()
+
+
 void desenha_cenario(janela J, elementos E, short level, short vida, short pontos)
 {
     int contador = 0;
 
     // Desenha a estrada
     gotoxy(E.estrada.x, E.estrada.y);
-
     do
     {
         printf("#");
@@ -73,7 +82,6 @@ void desenha_cenario(janela J, elementos E, short level, short vida, short ponto
     } while (contador < J.colunas);
 
     gotoxy(E.estrada.x +1, E.estrada.y);
-
     contador = 0;
     do
     {
@@ -90,11 +98,15 @@ void desenha_cenario(janela J, elementos E, short level, short vida, short ponto
     gotoxy(E.buggy.x +1, E.buggy.y);
     printf("(\\)-(\\)");
 
+    // Apaga a roda que sai quado morre
+    gotoxy(E.buggy.x +1, E.buggy.y -14);
+    printf(" ");
 
     // Desenha HUD (level, life, score, controles)
     gotoxy(E.HUD.x, E.HUD.y);
     printf("Level: %d    Life: %d    Score: %d", level, vida, pontos);
-}
+
+} // Fim da função desenhar_cenario()
 
 
 void pause(elementos E, bool *debug_mode)
@@ -335,22 +347,29 @@ void msg_do_level(elementos E, short level_atual)
 } // Fim da função msg_do_level();
 
 
-void logica_pular(elementos *E, bool *pular, bool *subir, bool *descer, short *tempo_ar)
+void logica_pular(elementos *E, bool *pular, bool *subir, bool *descer, short *tempo_ar, bool debug_mode)
 {
     // Variáveis
     short altura_max = 4;
+
+    if (debug_mode)
+    {
+        gotoxy(5, 1);
+        printf("Tempo no ar: %i", *tempo_ar);
+    }
 
     // Atualiza a altura
     if (*subir)
     {
         if (E->buggy.x < E->estrada.x -altura_max) // Limita a altura max de subida
         {
-
             if (*tempo_ar == 0)
             {
                 // Inverte subir e descer
                 *subir = false;
                 *descer = true;
+
+                *tempo_ar = 2;
             }
             else
             {
@@ -364,13 +383,19 @@ void logica_pular(elementos *E, bool *pular, bool *subir, bool *descer, short *t
     }
     else if (*descer)
     {
-        E->buggy.x += +1; // Desce o buggy
-
         if (E->buggy.x > E->estrada.x -3) // Limita a descida até o chão
         {
             // Finalização da animação do pulo
             *descer = false;
             *pular = false;
+        }
+        else if(*tempo_ar > 0 && E->buggy.x == E->estrada.x -altura_max +1)
+        {
+            *tempo_ar -= 1;
+        }
+        else
+        {
+            E->buggy.x += +1; // Desce o buggy
         }
     }
 
@@ -440,8 +465,8 @@ void gerar_buraco_pequeno(short *buracos, short *largura_buraco, short max, shor
             if (buracos[i] == -1)
             {
                 buracos[i] = 0;
-                largura_buraco[i] = 1; // Provavelmente essa linha é inutil
-                *espacamento = rand() % 11 +10; // Gera números de 10 à 20
+                largura_buraco[i] = 1;
+                *espacamento = rand() % 11 +15; // Gera números de 15 à 25
                 break;
             }
         }
@@ -483,7 +508,7 @@ void gerar_buraco_grande(short *buracos, short *largura_buraco, short max, short
                 {
                     buracos[i] = 0;
                     largura_buraco[i] = tamanho;
-                    *espacamento = rand() % 16 +12; // Gera números de 12 à 27
+                    *espacamento = rand() % 16 +15; // Gera números de 15 à 30
                     break;
                 }
             }
@@ -495,14 +520,38 @@ void gerar_buraco_grande(short *buracos, short *largura_buraco, short max, short
 
 void gerar_pedra(short *pedras, short* altura_pedra, short max, short *espacamento, bool debug_mode)
 {
+    // Variáveis
+    short i;
 
-}
+    if (debug_mode)
+    {
+        gotoxy(2, 1);
+        printf("Gerou pedra         ");
+    }
+
+    // Só gera um obstáculo após espaçamento chegar a 0 novamente
+    if (*espacamento == 0)
+    {
+        // Busca no vetor o índice de um obstáculo que não está sendo utilizado
+        for(i = 0; i < max; i++)
+        {
+            // Caso acho algum espaço livre, cria um obstáculo
+            if (pedras[i] == -1)
+            {
+                pedras[i] = 0;
+                altura_pedra[i] = rand() % 3 +1;// Gera pilhas de 1 à 3 de altura
+                *espacamento = rand() % 11 +10; // Gera números de 10 à 20
+                break;
+            }
+        }
+    }
+} // Fim da função gerar_pedras()
 
 
 void atualizar_buracos(elementos E, short *buracos, short *largura_buraco, short max_buracos, short limite_direita)
 {
     // Variáveis
-    int i;
+    int i, j;
 
     // Atualiza a posição dos buracos
     for(i = 0; i < max_buracos; i++)
@@ -513,9 +562,13 @@ void atualizar_buracos(elementos E, short *buracos, short *largura_buraco, short
         // Retira o buraco ao chegar no fim da estrada
         if (buracos[i] == limite_direita)
         {
-            gotoxy(E.estrada.x, buracos[i] -1);
-            printf("#");
+            for(j = 0; j < largura_buraco[i]; j++)
+            {
+                gotoxy(E.estrada.x, buracos[i] -1-j);
+                printf("#");
+            }
 
+            // Reseta o buraco
             buracos[i] = -1;
         }
     }
@@ -561,7 +614,7 @@ void desenhar_buracos(elementos E, short *buracos, short *largura_buraco, short 
                 gotoxy(E.estrada.x, buracos[i]);
                 printf(" ");
 
-                // Apaga o ratro do buraco
+                // Apaga o rastro do buraco
                 if (buracos[i] > 0)
                 {
                     gotoxy(E.estrada.x, buracos[i] -1);
@@ -576,7 +629,7 @@ void desenhar_buracos(elementos E, short *buracos, short *largura_buraco, short 
                 gotoxy(E.estrada.x, buracos[i] -1);
                 printf(" ");
 
-                // Apaga o ratro do buraco
+                // Apaga o rastro do buraco
                 if (buracos[i] > 0)
                 {
                     gotoxy(E.estrada.x, buracos[i] -2);
@@ -594,7 +647,7 @@ void desenhar_buracos(elementos E, short *buracos, short *largura_buraco, short 
                 gotoxy(E.estrada.x, buracos[i] -2);
                 printf(" ");
 
-                // Apaga o ratro do buraco
+                // Apaga o rastro do buraco
                 if (buracos[i] > 0)
                 {
                     gotoxy(E.estrada.x, buracos[i] -3);
@@ -615,7 +668,7 @@ void desenhar_buracos(elementos E, short *buracos, short *largura_buraco, short 
                 gotoxy(E.estrada.x, buracos[i] -3);
                 printf(" ");
 
-                // Apaga o ratro do buraco
+                // Apaga o rastro do buraco
                 if (buracos[i] > 0)
                 {
                     gotoxy(E.estrada.x, buracos[i] -4);
@@ -624,72 +677,267 @@ void desenhar_buracos(elementos E, short *buracos, short *largura_buraco, short 
             }
         }
     }
-}
+
+} // Fim da função desenhar_buracos()
 
 
 void desenhar_pedras(elementos E, short *pedras, short *altura_pedra, short max_pedras)
 {
-
-}
-
-
-void verificar_colisao(elementos E, short *pedras, short max_pedras)
-{
-    // variáveis
+    // Variáveis
     int i;
 
     for(i = 0; i < max_pedras; i++)
     {
+        // Desenha apenas as pedras existentes
+        if (pedras[i] != -1)
+        {
+            if (altura_pedra[i] == 1)
+            {
+                gotoxy(E.estrada.x -1, pedras[i]);
+                printf("#");
+
+                // Apaga o ratro da pedra
+                if (pedras[i] > 0)
+                {
+                    gotoxy(E.estrada.x -1, pedras[i] -1);
+                    printf(" ");
+                }
+            }
+            else if(altura_pedra[i] == 2)
+            {
+                gotoxy(E.estrada.x -1, pedras[i]);
+                printf("#");
+
+                gotoxy(E.estrada.x -2, pedras[i]);
+                printf("#");
+
+                // Apaga o ratro da pedra
+                if (pedras[i] > 0)
+                {
+                    gotoxy(E.estrada.x -1, pedras[i] -1);
+                    printf(" ");
+
+                    gotoxy(E.estrada.x -2, pedras[i] -1);
+                    printf(" ");
+                }
+            }
+            else if (altura_pedra[i] == 3)
+            {
+                gotoxy(E.estrada.x -1, pedras[i]);
+                printf("#");
+
+                gotoxy(E.estrada.x -2, pedras[i]);
+                printf("#");
+
+                gotoxy(E.estrada.x -3, pedras[i]);
+                printf("#");
+
+                // Apaga o ratro da pedra
+                if (pedras[i] > 0)
+                {
+                    gotoxy(E.estrada.x -1, pedras[i] -1);
+                    printf(" ");
+
+                    gotoxy(E.estrada.x -2, pedras[i] -1);
+                    printf(" ");
+
+                    gotoxy(E.estrada.x -3, pedras[i] -1);
+                    printf(" ");
+                }
+            }
+        }
+    }
+}
+
+
+void morte_buraco(elementos E, short buraco, short largura_buraco, short *buracos, short max)
+{
+    // Variáveis
+    int i, j, marcador = 0;
+    coordenadas roda = {E.buggy.x +1, E.buggy.y -2};
+
+    char *cima  = "  ___  ";
+    char *baixo = "cnOMMnb";
+
+    // Derruba o buggy onde tem buraco
+    /*
+    for(i = 0; i < 7; i++)
+    {
+        if (E.buggy.y+i == buraco)
+        {
+            marcador = i;
+        }
+    }
+
+    if (marcador > 0)
+    {
+        for(i = 0; i < buraco -largura_buraco +1; i++)
+        {
+            gotoxy(E.buggy.x, E.buggy.y +i);
+            printf("%c", cima[i]);
+
+            gotoxy(E.buggy.x +1, E.buggy.y +i);
+            printf("%c", baixo[i]);
+        }
+    }
+
+    for(i = 0; i < largura_buraco; i++)
+    {
+        if (buraco < E.buggy.y +7)
+        {
+            gotoxy(E.buggy.x +1, E.buggy.y +buraco);
+            printf("%c", cima[buraco]);
+
+            gotoxy(E.buggy.x +2, E.buggy.y +buraco);
+            printf("%c", baixo[buraco]);
+        }
+
+        buraco++;
+    }
+
+    if (1)
+    {
+        for(i = buraco; i < 7 ; i++)
+        {
+            gotoxy(E.buggy.x, E.buggy.y +i);
+            printf("%c", cima[i]);
+
+            gotoxy(E.buggy.x +1, E.buggy.y +i);
+            printf("%c", baixo[i]);
+        }
+    }
+    */
+
+    gotoxy(E.buggy.x, E.buggy.y);
+    printf("   ___  ");
+
+    gotoxy(E.buggy.x +1, E.buggy.y);
+    printf("cnOMMnb");
+
+    //gotoxy(E.estrada.x, buraco);
+    //printf("A");
+
+    // Frames da animação
+    //  <--7-6--5-4-3--2-1
+    /*
+             o  o   o  o     ___
+           o      o      o cnOMMnb
+    */
+
+    // Animação da roda
+    for(int i = 1; i <= 7; i++)
+    {
+        // Desenha novo frame da roda
+        gotoxy(roda.x, roda.y);
+        printf("o");
+
+        Sleep(240);
+
+        // Apaga o ultimo frame da roda
+        if (i != 7)
+        {
+            gotoxy(roda.x, roda.y);
+            printf(" ");
+        }
+
+        // Verifica se a roada está pulando no chão, caso contrário ela para de pular
+        if (i == 4 || i == 7)
+        {
+            for(j = 0; j < max; j++)
+            {
+                if (roda.y == buracos[j])
+                {
+                    gotoxy(roda.x, roda.y);
+                    printf(" ");
+
+                    gotoxy(roda.x +1, roda.y);
+                    printf("o");
+                    i = 8;
+                    break;
+                }
+            }
+        }
+
+        // Atualiza a posição da roda
+        roda.y -= 2;
+
+        if (i == 1 || i == 2 || i == 4 || i == 5)
+        {
+            roda.x = E.buggy.x;
+        }
+        else
+        {
+            roda.x = E.buggy.x +1;
+        }
+    }
+
+    Sleep(240);
+
+} // Fim da função morte_buraco()
+
+
+void verificar_colisao_buraco(elementos E, short *buracos, short *largura_buraco, short max, short *vida, bool *game_loop)
+{
+    // Variáveis
+    short hitbox = E.buggy.y;
+    short B;
+    int i, j, k;
+
+    for(i = 0; i < max; i++) // Testa cada buraco
+    {
+        if (buracos[i] != -1)
+        {
+            B = buracos[i];
+
+            for(j = 0; j < 7; j++) // Testa para cada parte debaixo do buggy para cada buraco
+            {
+                for(k = 0; k < largura_buraco[i]; k++) // Testa o comprimento do buraco para cada buraco em cada parte do buggy
+                {
+                    if (hitbox +j == B -k)
+                    {
+                        *vida -= 1; // Perde 1 vida
+                        *game_loop = false; // Acaba a iteração da vida
+                        morte_buraco(E, B, largura_buraco[i], buracos, max);
+
+                        i = max;
+                        j = 7;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+} // Fim da função verificar_colisão_buraco()
+
+
+void morte_pedra(elementos E, short pedra, short altura_pedra, short max_pedras)
+{
+    // Animação da morte ao bater numa pedra
+}
+
+
+void verificar_colisao_pedra(elementos E, short *pedras, short *altura_pedra, short max, short *vida, bool *game_loop)
+{
+    // variáveis
+    int i;
+
+    for(i = 0; i < max; i++)
+    {
         // Desenha a pedra apenas se ela existe
         if (pedras[i] != -1)
         {
-
+            //morte_pedra(E, pedras[i], altura_pedra[i], max_pedras);
         }
     }
-}
+} // Fim da função verificar_colisão_pedra()
 
 
-void morte_buraco(elementos E,short *buracos, short *largura_buraco, short max_buraco)
+void atualizar_tiro(elementos E, short *tiros, short max_tiro, short *pedras, short *altura_pedras, short max_pedra)
 {
     // Variáveis
-    int i = 0, j = 0;
-
-    // Animação da morte ao cair num buraco
-
-    char *msg_1 = "   ___  ";
-    char *msg_2 = "cnOMMnb";
-
-    gotoxy(E.buggy.x, E.buggy.y);
-    printf("%s", msg_1);
-    //printf("   ___  ");
-
-    gotoxy(E.buggy.x +1, E.buggy.y);
-    printf("%s", msg_2);
-    //printf("cnOMMnb");
-
-    // Lógica da roda quicando
-    for(i = 0; i < 3;) // Altura do arco
-    {
-        for(j = 0; j < 5; j++) // Largura do arco
-        {
-            // Apaga ultimo frame da roda
-            gotoxy(E.buggy.x -i, E.buggy.y -j);
-            printf(" ");
-
-            // Desenha novo frame da roda
-            gotoxy(E.buggy.x -i -1, E.buggy.y -j -1);
-            printf("o");
-            i++;
-
-            Sleep(200);
-        }
-    }
-}
+    coordenadas tiro = {E.buggy.x, E.buggy.y -2};
 
 
-void morte_pedra(elementos E, short *pedras, short *altura_pedra, short max_pedras)
-{
-    // Animação da morte ao bater numa pedra
 }
 
 
@@ -699,8 +947,6 @@ void game_loop(elementos E, short *level,short *vida, short *pontos)
     short frame_roda = 0;
     short frame_chassi = 0;
     short frame_cabine = 0;
-
-    short i = 0;
 
     short max_buracos = 10; // Máx de 10 buracos pequenos
     short buracos[max_buracos];
@@ -713,18 +959,18 @@ void game_loop(elementos E, short *level,short *vida, short *pontos)
     // Ex: pedras[i] tem tamanho_pedra[i]
 
     short espacamento = 0; // Espaço de estrada entre obstáculos
-    short hitbox_y = E.buggy.y;
     short limite_direita = E.buggy.y*4/3;
 
     short tempo_ar = 0;
+
+    short max_tiros = 0;
+    short tiros[2] = {-1, -1};
 
     char roda[] = "\\-/|U"; // Charactéres da roda
 
     char input; // Contém o input do usuário
 
     bool pular = false, subir = false, descer = false;
-
-    bool morreu_buraco = false;
 
     bool debug_mode = false;
     bool game_loop = true;
@@ -756,9 +1002,20 @@ void game_loop(elementos E, short *level,short *vida, short *pontos)
             break;
 
         case 'z':
-            if(*level >= 3)
+            if(*level >= 1)
             {
-                //atirar(); // Lógica do tiro
+                // Posiciona o tiro na tela
+                gotoxy(E.buggy.x +1, E.buggy.y -2);
+                printf("<");
+
+                if (tiros[0] == -1)
+                {
+                    tiros[0] = E.buggy.y -2;
+                }
+                else if(tiros[1] == -1)
+                {
+                    tiros[1] = E.buggy.y -2;
+                }
             }
 
             break;
@@ -780,7 +1037,7 @@ void game_loop(elementos E, short *level,short *vida, short *pontos)
         if (pular)
         {
             // Lógica do pulo
-            logica_pular(&E, &pular, &subir, &descer, &tempo_ar);
+            logica_pular(&E, &pular, &subir, &descer, &tempo_ar, debug_mode);
 
             // Desenha o carro enquanto pula
             desenhar_pulo(E, subir, &frame_chassi, &frame_cabine, &frame_roda);
@@ -841,6 +1098,9 @@ void game_loop(elementos E, short *level,short *vida, short *pontos)
         // Atualiza a posição y (coluna) das pilhas de pedra
         atualiza_pedras(E, pedras, altura_pedra, max_pedras, limite_direita);
 
+        // Atualiza a posição y (coluna) do tiro
+        atualizar_tiro(E, tiros, max_tiros, pedras, altura_pedra, max_pedras);
+
         // Desenha os buracos no terminal
         desenhar_buracos(E, buracos, largura_buraco, max_buracos);
 
@@ -848,33 +1108,21 @@ void game_loop(elementos E, short *level,short *vida, short *pontos)
         desenhar_pedras(E, pedras, altura_pedra, max_pedras);
 
         // Confere se o carro não caio ou bateu
-        for(i = 0; i < max_buracos; i++)
+        if (debug_mode)
         {
-            if (debug_mode)
-            {
-                gotoxy(3, 1);
-                printf("Buggy linha: %d", E.buggy.x);
-                gotoxy(4, 1);
-                printf("Buggy coluna: %d", E.buggy.y);
-            }
-
-            if (!pular)
-            {
-                if (hitbox_y == buracos[i] || hitbox_y +1 == buracos[i] || hitbox_y +2 == buracos[i])
-                {
-                    *vida -= 1; // Perde 1 vida
-                    morreu_buraco = true;
-                    game_loop = false; // Acaba a iteração da vida
-
-                    // Mensagem de RIP
-                    if (debug_mode)
-                    {
-                        gotoxy(6, 1);
-                        printf("Perdeu vida");
-                    }
-                }
-            }
+            gotoxy(3, 1);
+            printf("Buggy linha: %d", E.buggy.x);
+            gotoxy(4, 1);
+            printf("Buggy coluna: %d", E.buggy.y);
         }
+
+        if (!pular)
+        {
+            verificar_colisao_buraco(E, buracos, largura_buraco, max_buracos, vida, &game_loop);
+        }
+
+        // verificar_colisao_pedra(E, pedras, altura_pedra, max_pedras, vida, &game_loop);
+
 
         // Atualiza o espaçamento entre obstáculos
         if (espacamento > 0) espacamento -= 1;
@@ -883,7 +1131,7 @@ void game_loop(elementos E, short *level,short *vida, short *pontos)
         *pontos += 1;
 
         // Atualiza o level
-        if (*pontos == 200 || *pontos == 400)
+        if ( (*pontos == 200 || *pontos == 400) && game_loop)
         {
             *level += 1;
             msg_do_level(E, *level);
@@ -894,20 +1142,6 @@ void game_loop(elementos E, short *level,short *vida, short *pontos)
         printf("Level: %d    Life: %d    Score: %d", *level, *vida, *pontos);
 
     } // Fim do while (game_loop)
-
-    // Verifica qual foi o tipo de morte e aplica a animação
-    if (morreu_buraco)
-    {
-        morte_buraco(E, buracos, largura_buraco, max_buracos);
-        while(1)
-        {
-
-        }
-    }
-    else // morreu pedra
-    {
-        morte_pedra(E, pedras, largura_buraco, max_pedras);
-    }
 
 } // Fim da função game_loop()
 
@@ -940,6 +1174,8 @@ void play_game(janela J)
         game_loop(E, &level, &vida, &pontos); // Inicia a gameplay
 
     } while (vida > 0);
+
+    gravar_pontuacao();
 }
 
 
