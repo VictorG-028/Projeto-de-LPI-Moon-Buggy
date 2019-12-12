@@ -28,6 +28,38 @@ void gotoxy(short x, short y)
 }
 
 
+void ler_txt(short pontuacoes[100], char nicks[100][4])
+{
+    // Variáveis
+    int i;
+
+    FILE *f = fopen("rank.txt", "r");
+
+    for(i = 0; i < 100; i++)
+    {
+        fscanf(f,"%hi;%s", &pontuacoes[i], nicks[i]);
+    }
+
+    fclose(f);
+}
+
+
+void salvar_txt(short pontuacoes[100], char nicks[100][4])
+{
+    // Variáveis
+    int i;
+
+    FILE *f = fopen("rank.txt", "w");
+
+    for(i = 0; i < 100; i++)
+    {
+        fprintf(f,"%i;%s", pontuacoes[i], nicks[i]);
+    }
+
+    fclose(f);
+}
+
+
 void preencher_vetor(short tam, short vetor[tam], short num)
 {
     int i;
@@ -38,31 +70,99 @@ void preencher_vetor(short tam, short vetor[tam], short num)
 }
 
 
-void show_rank(janela J)
+void preencher_nicks(char nicks[100][4])
 {
-    // variável
-    char *texto;
+    // Variáveis
+    int i;
 
-    // Coloca o primeiro texto
-    texto = "Aperte qualquer coisa para voltar ao menu";
-    gotoxy(J.linhas/2, J.colunas/2 - strlen(texto)/2);
-    puts(texto);
-
-    // Coloca o segundo texto
-    texto = "Sistema de rank ainda nao implementado";
-    gotoxy(J.linhas/2 +1, J.colunas/2 - strlen(texto)/2);
-    puts(texto);
-
-    getch();
-    system("cls");
+    for(i = 0; i < 100; i++)
+    {
+        strcpy(nicks[i], " X ");
+    }
 }
 
 
-void gravar_pontuacao()
+void ordenar_vetor(short *vetor, short tam, char nicks[100][4])
 {
-    while(1)
+    // Variáveis
+    short i, j, aux;
+    char temp[4];
+
+    // Algoritmo buuble sort
+    for(i = 0; i < tam; i++)
     {
-        if (rand() % 10 == 0) printf("X");
+        for(j = 0; j < i; j++)
+        {
+            if(vetor[i] > vetor[j])
+            {
+                aux = vetor[i];
+                strcpy(temp, nicks[i]);
+
+                vetor[i] = vetor[j];
+                strcpy(nicks[i], nicks[j]);
+
+                vetor[j] = aux;
+                strcpy(nicks[j], temp);
+            }
+        }
+    }
+}
+
+
+void show_rank(janela J, short pontuacoes[100], char nicks[100][4])
+{
+    // variável
+    int i;
+    system("color 3");
+
+    gotoxy(J.linhas/4, J.colunas/2 -strlen("TOP 10")/2);
+    printf("Rank 10");
+
+    for(i = 0; i < 10; i++)
+    {
+        gotoxy(J.linhas/4 +2+i, J.colunas/2 -strlen("Rank 10")/2);
+        printf("%i\t%c%c%c", pontuacoes[i], nicks[i][0], nicks[i][1], nicks[i][2]);
+    }
+
+    getch();
+    system("cls");
+    system("color 4");
+}
+
+
+void gravar_pontuacao(short pontos, char nick[4], short pontuacoes[100], char nicks[100][4])
+{
+    // variáveis
+    short i, menor_pontuacao = 0, aux = 0;
+    bool tem_vaga = false;
+
+    // encontra o próxio espaço livre nas pontuações
+    for(i = 0; i < 100; i++)
+    {
+        if (pontuacoes[i] == 0)
+        {
+            tem_vaga = true;
+            pontuacoes[i] = pontos;
+            strcpy(nicks[i], nick);
+            break;
+        }
+
+        // encontra a menor pontuação no vetor
+        if (i == 0)
+        {
+            menor_pontuacao = pontuacoes[i];
+        }
+        else if(menor_pontuacao > pontuacoes[i])
+        {
+            menor_pontuacao = pontuacoes[i];
+            aux = i;
+        }
+    }
+
+    if (!tem_vaga)
+    {
+        pontuacoes[aux] = pontos;
+        strcpy(nicks[aux], nick);
     }
 
 } // Fim da função gravar_pontuação()
@@ -132,7 +232,7 @@ void desenha_cenario(janela J, elementos E, short level, short vida, short ponto
 } // Fim da função desenhar_cenario()
 
 
-void pause(elementos E, bool *debug_mode)
+void pause(elementos E, short *vidas, bool *game_loop, bool *debug_mode)
 {
     // variáveis
     char *continuar_msg = "Continuar ";
@@ -226,8 +326,8 @@ void pause(elementos E, bool *debug_mode)
             else if (seta.x == E.info.x +2)
             {
                 pausa = false;
-                // Salvar rank e sair do jogo
-                // LEMBRAR DE ARRUMAR AKI <-------------------
+                *vidas = 0;
+                *game_loop = false;
             }
             else if (seta.x == E.info.x +4)
             {
@@ -779,14 +879,18 @@ void desenhar_pedras(elementos E, short *pedras, short *altura_pedra, short max_
 void morte_buraco(elementos E, short buraco, short largura_buraco, short *buracos, short max)
 {
     // Variáveis
-    int i, j, marcador = 0;
+    int i, j;
+
     coordenadas roda = {E.buggy.x +1, E.buggy.y -2};
+
+    /*
+    int marcador = 0;
 
     char *cima  = "  ___  ";
     char *baixo = "cnOMMnb";
 
     // Derruba o buggy onde tem buraco
-    /*
+
     for(i = 0; i < 7; i++)
     {
         if (E.buggy.y+i == buraco)
@@ -851,7 +955,7 @@ void morte_buraco(elementos E, short buraco, short largura_buraco, short *buraco
     */
 
     // Animação da roda
-    for(int i = 1; i <= 7; i++)
+    for(i = 1; i <= 7; i++)
     {
         // Desenha novo frame da roda
         gotoxy(roda.x, roda.y);
@@ -1111,7 +1215,7 @@ void game_loop(elementos E, short *level,short *vida, short *pontos)
             break;
 
         case 'z':
-            if(*level >= 1)
+            if(*level >= 3)
             {
                 // Gera um tiro caso existe um slot livre
                 if (tiros[0] == -1)
@@ -1133,134 +1237,137 @@ void game_loop(elementos E, short *level,short *vida, short *pontos)
                 printf("Pausado");
             }
 
-            pause(E, &debug_mode);
+            pause(E, vida, &game_loop, &debug_mode);
 
             break;
 
         } // Fim do switch input
 
-        // Renderiza as mudanças do input
-        if (pular)
-        {
-            // Lógica do pulo
-            logica_pular(&E, &pular, &subir, &descer, &tempo_ar, debug_mode);
-
-            // Desenha o carro enquanto pula
-            desenhar_pulo(E, subir, &frame_chassi, &frame_cabine, &frame_roda);
-        }
-        else // Senão está pulando, está rodando a roda
-        {
-            // Ajusta o frame da cabine e do chassi após o pulo
-            gotoxy(E.buggy.x, E.buggy.y);
-            printf("   Omn");
-
-            // Animação da roda do carro
-            gotoxy(E.buggy.x +1, E.buggy.y +1);
-            printf("%c", roda[frame_roda]);
-
-            gotoxy(E.buggy.x +1, E.buggy.y +5);
-            printf("%c", roda[frame_roda]);
-
-            // Atualiza o frame da roda
-            if (frame_roda < 3)
-            {
-                frame_roda++;
-            }
-            else
-            {
-                frame_roda = 0;
-            }
-        }
-
-        // Limpa o input
-        input = -1;
-
-        // Gera os obstáculos de acordo com o level e pontos
-        // Os pontos marcam o intervalo sem obstáculos entre levels
-        if (*level == 1 && *pontos > 5)
-        {
-            gerar_pedra(pedras, altura_pedra, max_pedras, &espacamento, debug_mode);
-            //gerar_buraco_pequeno(buracos, largura_buraco, max_buracos, &espacamento, debug_mode);
-        }
-        else if (*level == 2 && *pontos > 230)
-        {
-            gerar_pedra(pedras, altura_pedra, max_pedras, &espacamento, debug_mode);
-            // Pode gerar buracos pequenos ou grandes
-            //gerar_buraco_grande(buracos, largura_buraco, max_buracos, &espacamento, debug_mode);
-        }
-        else if (*level == 3 && *pontos > 430)
-        {
-            if (rand() % 2)
-            {
-                //gerar_buraco_pequeno(buracos, largura_buraco, max_pedras, &espacamento, debug_mode);
-            }
-            else
-            {
-                gerar_pedra(pedras, altura_pedra, max_pedras, &espacamento, debug_mode);
-            }
-        }
-
-        // Atualiza a posição y (coluna) do tiro
-        atualizar_tiro(E, tiros, max_tiros, pedras, altura_pedra, max_pedras, debug_mode);
-
-        // Atualiza a posição y (coluna) dos buracos
-        atualizar_buracos(E, buracos, largura_buraco, max_buracos, limite_direita);
-
-        // Atualiza a posição y (coluna) das pilhas de pedra
-        atualiza_pedras(E, pedras, altura_pedra, max_pedras, limite_direita);
-
-        // Desenha os buracos no terminal
-        desenhar_buracos(E, buracos, largura_buraco, max_buracos);
-
-        // Desenha as pedras no terminal
-        desenhar_pedras(E, pedras, altura_pedra, max_pedras);
-
-        // Confere se o carro não caio ou bateu
-        if (debug_mode)
-        {
-            gotoxy(3, 1);
-            printf("Buggy linha: %d", E.buggy.x);
-            gotoxy(4, 1);
-            printf("Buggy coluna: %d", E.buggy.y);
-        }
-
-        if (!pular)
-        {
-            verificar_colisao_buraco(E, buracos, largura_buraco, max_buracos, vida, &game_loop);
-        }
-
         if (game_loop)
         {
-            verificar_colisao_pedra(E, pedras, altura_pedra, max_pedras, vida, &game_loop);
+            // Renderiza as mudanças do input
+            if (pular)
+            {
+                // Lógica do pulo
+                logica_pular(&E, &pular, &subir, &descer, &tempo_ar, debug_mode);
+
+                // Desenha o carro enquanto pula
+                desenhar_pulo(E, subir, &frame_chassi, &frame_cabine, &frame_roda);
+            }
+            else // Senão está pulando, está rodando a roda
+            {
+                // Ajusta o frame da cabine e do chassi após o pulo
+                gotoxy(E.buggy.x, E.buggy.y);
+                printf("   Omn");
+
+                // Animação da roda do carro
+                gotoxy(E.buggy.x +1, E.buggy.y +1);
+                printf("%c", roda[frame_roda]);
+
+                gotoxy(E.buggy.x +1, E.buggy.y +5);
+                printf("%c", roda[frame_roda]);
+
+                // Atualiza o frame da roda
+                if (frame_roda < 3)
+                {
+                    frame_roda++;
+                }
+                else
+                {
+                    frame_roda = 0;
+                }
+            }
+
+            // Limpa o input
+            input = -1;
+
+            // Gera os obstáculos de acordo com o level e pontos
+            // Os pontos marcam o intervalo sem obstáculos entre levels
+            if (*level == 1 && *pontos > 5)
+            {
+                gerar_buraco_pequeno(buracos, largura_buraco, max_buracos, &espacamento, debug_mode);
+            }
+            else if (*level == 2 && *pontos > 230)
+            {
+                // Pode gerar buracos pequenos ou grandes
+                gerar_buraco_grande(buracos, largura_buraco, max_buracos, &espacamento, debug_mode);
+            }
+            else if (*level == 3 && *pontos > 430)
+            {
+                if (rand() % 2)
+                {
+                    gerar_buraco_pequeno(buracos, largura_buraco, max_pedras, &espacamento, debug_mode);
+                }
+                else
+                {
+                    gerar_pedra(pedras, altura_pedra, max_pedras, &espacamento, debug_mode);
+                }
+            }
+
+            // Atualiza a posição y (coluna) do tiro
+            atualizar_tiro(E, tiros, max_tiros, pedras, altura_pedra, max_pedras, debug_mode);
+
+            // Atualiza a posição y (coluna) dos buracos
+            atualizar_buracos(E, buracos, largura_buraco, max_buracos, limite_direita);
+
+            // Atualiza a posição y (coluna) das pilhas de pedra
+            atualiza_pedras(E, pedras, altura_pedra, max_pedras, limite_direita);
+
+            // Desenha os buracos no terminal
+            desenhar_buracos(E, buracos, largura_buraco, max_buracos);
+
+            // Desenha as pedras no terminal
+            desenhar_pedras(E, pedras, altura_pedra, max_pedras);
+
+            // Confere se o carro não caio ou bateu
+            if (debug_mode)
+            {
+                gotoxy(3, 1);
+                printf("Buggy linha: %d", E.buggy.x);
+                gotoxy(4, 1);
+                printf("Buggy coluna: %d", E.buggy.y);
+            }
+
+            if (!pular)
+            {
+                verificar_colisao_buraco(E, buracos, largura_buraco, max_buracos, vida, &game_loop);
+            }
+
+            if (game_loop)
+            {
+                verificar_colisao_pedra(E, pedras, altura_pedra, max_pedras, vida, &game_loop);
+            }
+
+            // Atualiza o espaçamento entre obstáculos
+            if (espacamento > 0) espacamento -= 1;
+
+            // Atualiza os pontos
+            *pontos += 1;
+
+            // Atualiza o level
+            if ( (*pontos == 200 || *pontos == 400) && game_loop)
+            {
+                *level += 1;
+                msg_do_level(E, *level);
+            }
+
+            // Atualiza o HUD
+            gotoxy(E.HUD.x, E.HUD.y);
+            printf("Level: %d    Life: %d    Score: %d", *level, *vida, *pontos);
         }
-
-        // Atualiza o espaçamento entre obstáculos
-        if (espacamento > 0) espacamento -= 1;
-
-        // Atualiza os pontos
-        *pontos += 1;
-
-        // Atualiza o level
-        if ( (*pontos == 200 || *pontos == 400) && game_loop)
-        {
-            *level += 1;
-            msg_do_level(E, *level);
-        }
-
-        // Atualiza o HUD
-        gotoxy(E.HUD.x, E.HUD.y);
-        printf("Level: %d    Life: %d    Score: %d", *level, *vida, *pontos);
 
     } // Fim do while (game_loop)
 
 } // Fim da função game_loop()
 
 
-void play_game(janela J)
+void play_game(janela J, short pontuacoes[100], char nicks[100][4])
 {
     short level = 1;
     short vida = 3;
     short pontos = 0;
+
+    char nick[4];
 
     elementos E; // Guarda as coordenadas dos elementos da janela
 
@@ -1285,7 +1392,34 @@ void play_game(janela J)
 
     } while (vida > 0);
 
-    gravar_pontuacao();
+    // Atualiza info para centro da janela
+    E.info.x = J.linhas/2;
+    E.info.y = J.colunas/2;
+
+    // Limpa tela
+    system("cls");
+
+    // Pede o nick do jogador atual
+    fflush(stdin);
+    gotoxy(E.info.x, E.info.y -strlen("Digite seu nick de 3 letras: ")/2 );
+    printf("Digite seu nick de 3 letras: ");
+    scanf("%s", nick);
+    fflush(stdin);
+
+    // Grava a pontuação em um vetor
+    gravar_pontuacao(pontos, nick, pontuacoes, nicks);
+
+    // Ordena o vetor
+    ordenar_vetor(pontuacoes, 100, nicks);
+
+    // MSG de aguardando
+    gotoxy(E.info.x +1, E.info.y-strlen("Digite seu nick de 3 letras: ")/2 );
+    printf("Aguarde o salvamento. . .");
+    Sleep(5000);
+
+
+
+    system("cls");
 }
 
 
@@ -1306,18 +1440,38 @@ void menu(janela J)
     coordenadas rank = {J.linhas/2 +2, J.colunas/2 -strlen(rank_msg)/2};
     coordenadas exit = {J.linhas/2 +4, J.colunas/2 -strlen(exit_msg)/2};
 
+    short pontuacoes[100]; // Contém as pontuações dos jogadores
+    char nicks[100][4]; // Matriz que contèm os nicks dos jogadores
+
+    // Preenche o vetor de pontuações com 0 (vazio)
+    preencher_vetor(100, pontuacoes, 0);
+
+    // preenceh os nicks com "   "
+    preencher_nicks(nicks);
+
+    // Carrega o arquivo
+    ler_txt(pontuacoes, nicks);
 
     // Desenha o título do jogo
     gotoxy(J.linhas/4, J.colunas/2 -5);
-    printf("Moon Buggy");
+    printf("  MOOM");
+
+    gotoxy(J.linhas/4 +1, J.colunas/2 -5);
+    printf("     BUGGY");
+
+    gotoxy(J.linhas/4 -2, J.colunas/2 -5);
+    printf("+=-=-=-=-=+");
+
+    gotoxy(J.linhas/4 +3, J.colunas/2 -5);
+    printf("+=-=-=-=-=+");
 
 
     //Desenha os controles/informações do jogo
     gotoxy(info.x, info.y);
-    printf("Mover seta: W(cima) S(baixo)");
+    printf("W(cima) S(baixo)");
 
     gotoxy(info.x +1, info.y);
-    printf("Selecionar: espaco(escolher)");
+    printf("espaco(escolher)");
 
 
     // Desenha a seta de seleção -->
@@ -1403,18 +1557,48 @@ void menu(janela J)
             if (seta.x == play.x)
             {
                 system("cls");
-                play_game(J);
+                play_game(J, pontuacoes, nicks);
+
+                // Re-desenha o menu
+                gotoxy(J.linhas/4, J.colunas/2 -5);
+                printf("  MOOM");
+                gotoxy(J.linhas/4 +1, J.colunas/2 -5);
+                printf("     BUGGY");
+                gotoxy(J.linhas/4 -2, J.colunas/2 -5);
+                printf("+=-=-=-=-=+");
+                gotoxy(J.linhas/4 +3, J.colunas/2 -5);
+                printf("+=-=-=-=-=+");
+                gotoxy(info.x, info.y);
+                printf("W(cima) S(baixo)");
+                gotoxy(info.x +1, info.y);
+                printf("espaco(escolher)");
+                gotoxy(seta.x, seta.y);
+                printf("-->");
+                gotoxy(play.x, play.y);
+                printf("%s", play_msg);
+                gotoxy(rank.x, rank.y);
+                printf("%s", rank_msg);
+                gotoxy(exit.x, exit.y);
+                printf("%s", exit_msg);
             }
             else if (seta.x == rank.x)
             {
                 system("cls");
-                show_rank(J);
+                show_rank(J, pontuacoes, nicks);
 
                 // Re-desenha o menu
+                gotoxy(J.linhas/4, J.colunas/2 -5);
+                printf("  MOOM");
+                gotoxy(J.linhas/4 +1, J.colunas/2 -5);
+                printf("     BUGGY");
+                gotoxy(J.linhas/4 -2, J.colunas/2 -5);
+                printf("+=-=-=-=-=+");
+                gotoxy(J.linhas/4 +3, J.colunas/2 -5);
+                printf("+=-=-=-=-=+");
                 gotoxy(info.x, info.y);
-                printf("Mover seta: W(cima) S(baixo)");
+                printf("W(cima) S(baixo)");
                 gotoxy(info.x +1, info.y);
-                printf("Selecionar: espaco(escolher)");
+                printf("espaco(escolher)");
                 gotoxy(seta.x, seta.y);
                 printf("-->");
                 gotoxy(play.x, play.y);
@@ -1427,6 +1611,7 @@ void menu(janela J)
             else if (seta.x == seta.x)
             {
                 menu = false;
+                salvar_txt(pontuacoes, nicks);
             }
             break;
 

@@ -24,6 +24,8 @@ int main()
 
     srand(time(NULL)); // inicia a seed de número aleatórios
 
+    system("color 4"); // Muda a cor das letras para vermehlo
+
     ////////////////////////
 
     init_game(J);
