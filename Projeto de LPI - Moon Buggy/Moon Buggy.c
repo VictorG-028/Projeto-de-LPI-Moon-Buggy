@@ -37,11 +37,12 @@ void ler_txt(short pontuacoes[100], char nicks[100][4])
 
     for(i = 0; i < 100; i++)
     {
-        fscanf(f,"%hi;%s", &pontuacoes[i], nicks[i]);
+        fscanf(f,"%hi,%s ;", &pontuacoes[i], nicks[i]);
     }
 
     fclose(f);
-}
+
+} // Fim da função ler_txt()
 
 
 void salvar_txt(short pontuacoes[100], char nicks[100][4])
@@ -53,21 +54,25 @@ void salvar_txt(short pontuacoes[100], char nicks[100][4])
 
     for(i = 0; i < 100; i++)
     {
-        fprintf(f,"%i;%s", pontuacoes[i], nicks[i]);
+        fprintf(f,"%hi,%s ;", pontuacoes[i], nicks[i]);
     }
 
     fclose(f);
-}
+
+} // Fim da função salvar_txt()
 
 
 void preencher_vetor(short tam, short vetor[tam], short num)
 {
+    // Variáveis
     int i;
-    for(i = 0; i < tam; i++)
+
+    for (i = 0; i < tam; i++)
     {
         vetor[i] = num;
     }
-}
+
+} // Fim da função preencehr_vetor()
 
 
 void preencher_nicks(char nicks[100][4])
@@ -77,9 +82,10 @@ void preencher_nicks(char nicks[100][4])
 
     for(i = 0; i < 100; i++)
     {
-        strcpy(nicks[i], " X ");
+        strcpy(nicks[i], "XXX");
     }
-}
+
+} // Fim da função preencher_nicks()
 
 
 void ordenar_vetor(short *vetor, short tam, char nicks[100][4])
@@ -88,7 +94,7 @@ void ordenar_vetor(short *vetor, short tam, char nicks[100][4])
     short i, j, aux;
     char temp[4];
 
-    // Algoritmo buuble sort
+    // Algoritmo bubble sort
     for(i = 0; i < tam; i++)
     {
         for(j = 0; j < i; j++)
@@ -106,13 +112,15 @@ void ordenar_vetor(short *vetor, short tam, char nicks[100][4])
             }
         }
     }
-}
+
+} // Fim da função ordenar_vetor()
 
 
 void show_rank(janela J, short pontuacoes[100], char nicks[100][4])
 {
-    // variável
+    // variáveis
     int i;
+
     system("color 3");
 
     gotoxy(J.linhas/4, J.colunas/2 -strlen("TOP 10")/2);
@@ -127,7 +135,8 @@ void show_rank(janela J, short pontuacoes[100], char nicks[100][4])
     getch();
     system("cls");
     system("color 4");
-}
+
+} // Fim da função show_rank()
 
 
 void gravar_pontuacao(short pontos, char nick[4], short pontuacoes[100], char nicks[100][4])
@@ -170,6 +179,7 @@ void gravar_pontuacao(short pontos, char nick[4], short pontuacoes[100], char ni
 
 void desenha_cenario(janela J, elementos E, short level, short vida, short pontos)
 {
+    // Variáveis
     int contador = 0;
 
     // Desenha a estrada
@@ -522,7 +532,7 @@ void logica_pular(elementos *E, bool *pular, bool *subir, bool *descer, short *t
         }
     }
 
-} // Fim da função pular()
+} // Fim da função logica_pular()
 
 
 void desenhar_pulo(elementos E,bool subir, short *frame_cabine, short *frame_chassi, short *frame_roda)
@@ -625,19 +635,19 @@ void gerar_buraco_grande(short *buracos, short *largura_buraco, short max, short
             }
         }
 
-            for(i = 0; i < max; i++)
+        for(i = 0; i < max; i++)
+        {
+            if (buracos[i] == -1)
             {
-                if (buracos[i] == -1)
-                {
-                    buracos[i] = 0;
-                    largura_buraco[i] = tamanho;
-                    *espacamento = rand() % 16 +15; // Gera números de 15 à 30
-                    break;
-                }
+                buracos[i] = 0;
+                largura_buraco[i] = tamanho;
+                *espacamento = rand() % 16 +15; // Gera números de 15 à 30
+                break;
             }
-
+        }
 
     }
+
 } // Fim da função gerar_buracos_grandes()
 
 
@@ -668,6 +678,7 @@ void gerar_pedra(short *pedras, short* altura_pedra, short max, short *espacamen
             }
         }
     }
+
 } // Fim da função gerar_pedras()
 
 
@@ -695,7 +706,8 @@ void atualizar_buracos(elementos E, short *buracos, short *largura_buraco, short
             buracos[i] = -1;
         }
     }
-}
+
+} // Fim da função atualizar_buracos()
 
 
 void atualiza_pedras(elementos E, short *pedras, short *altura_pedras, short max_pedras, short limite_direita)
@@ -722,7 +734,8 @@ void atualiza_pedras(elementos E, short *pedras, short *altura_pedras, short max
             pedras[i] = -1;
         }
     }
-}
+
+} // Fim da função atualizar_pedras()
 
 
 void desenhar_buracos(elementos E, short *buracos, short *largura_buraco, short max_buracos)
@@ -873,7 +886,8 @@ void desenhar_pedras(elementos E, short *pedras, short *altura_pedra, short max_
             }
         }
     }
-}
+
+} // Fim da função desenhar_pedras()
 
 
 void morte_buraco(elementos E, short buraco, short largura_buraco, short *buracos, short max)
@@ -883,6 +897,7 @@ void morte_buraco(elementos E, short buraco, short largura_buraco, short *buraco
 
     coordenadas roda = {E.buggy.x +1, E.buggy.y -2};
 
+    // Essa parte não está funcionando
     /*
     int marcador = 0;
 
@@ -964,29 +979,33 @@ void morte_buraco(elementos E, short buraco, short largura_buraco, short *buraco
         Sleep(240);
 
         // Apaga o ultimo frame da roda
-        if (i != 7)
+        if (i != 7) // Se o frame for diferente do último
         {
             gotoxy(roda.x, roda.y);
             printf(" ");
         }
 
         // Verifica se a roada está pulando no chão, caso contrário ela para de pular
-        if (i == 4 || i == 7)
+        if (i == 4 || i == 7) // Se o frame for 4 ou 7
         {
             for(j = 0; j < max; j++)
             {
-                if (roda.y == buracos[j])
+                if (roda.y == buracos[j]) // Se a roda está acima de um buraco
                 {
+                    // Apaga a roda da tela
                     gotoxy(roda.x, roda.y);
                     printf(" ");
 
+                    // Redesenha no buraco
                     gotoxy(roda.x +1, roda.y);
                     printf("o");
-                    i = 8;
-                    break;
+
+                    i = 8; // Termina o loop i
+                    break; // Termina o loop j
                 }
             }
         }
+
 
         // Atualiza a posição da roda
         roda.y -= 2;
@@ -1037,6 +1056,7 @@ void verificar_colisao_buraco(elementos E, short *buracos, short *largura_buraco
             }
         }
     }
+
 } // Fim da função verificar_colisão_buraco()
 
 
@@ -1050,7 +1070,8 @@ void morte_pedra(elementos E, short pedra, short altura_pedra, short max_pedras)
     printf("OMM_nb ");
 
     Sleep(1500);
-}
+
+} // Fim da função morte_pedra()
 
 
 void verificar_colisao_pedra(elementos E, short *pedras, short *altura_pedra, short max, short *vida, bool *game_loop)
@@ -1415,12 +1436,12 @@ void play_game(janela J, short pontuacoes[100], char nicks[100][4])
     // MSG de aguardando
     gotoxy(E.info.x +1, E.info.y-strlen("Digite seu nick de 3 letras: ")/2 );
     printf("Aguarde o salvamento. . .");
-    Sleep(5000);
-
+    Sleep(750);
 
 
     system("cls");
-}
+
+} // Fim da função play_game()
 
 
 void menu(janela J)
@@ -1429,7 +1450,7 @@ void menu(janela J)
     char *play_msg = "JOGAR";
     char *rank_msg = "Rank dos jogadores";
     char *exit_msg = "Sair do jogo";
-    char input = -1; // Contém o input do usuário
+    char input = -1; // Contém a tecla apertada
 
     bool novo_frame = true;
     bool menu = true;
@@ -1454,7 +1475,7 @@ void menu(janela J)
 
     // Desenha o título do jogo
     gotoxy(J.linhas/4, J.colunas/2 -5);
-    printf("  MOOM");
+    printf("  MOON");
 
     gotoxy(J.linhas/4 +1, J.colunas/2 -5);
     printf("     BUGGY");
@@ -1561,7 +1582,7 @@ void menu(janela J)
 
                 // Re-desenha o menu
                 gotoxy(J.linhas/4, J.colunas/2 -5);
-                printf("  MOOM");
+                printf("  MOON");
                 gotoxy(J.linhas/4 +1, J.colunas/2 -5);
                 printf("     BUGGY");
                 gotoxy(J.linhas/4 -2, J.colunas/2 -5);
@@ -1588,7 +1609,7 @@ void menu(janela J)
 
                 // Re-desenha o menu
                 gotoxy(J.linhas/4, J.colunas/2 -5);
-                printf("  MOOM");
+                printf("  MOON");
                 gotoxy(J.linhas/4 +1, J.colunas/2 -5);
                 printf("     BUGGY");
                 gotoxy(J.linhas/4 -2, J.colunas/2 -5);
@@ -1633,11 +1654,14 @@ void menu(janela J)
 
     } // Fim do while (menu)
 
+    printf("\n");
+
 } // Fim da função menu()
 
 
 void init_game(janela J)
 {
     menu(J);
-}
+
+} // Fim da função init_game()
 
